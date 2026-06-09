@@ -1,75 +1,42 @@
-# SCB Anställningsanalys
+# SCB Anställningsanalys - Webbsida
 
-Ett Python-verktyg som hämtar och analyserar data från SCB:s API om pågående anställningar med en anställningstid på 6 månader eller mindre. Verktyget är paketerat i en Docker-container så att det fungerar på vilken dator som helst utan att installera Python.
+En Flask-baserad webbapplikation som hämtar och visar data från SCB:s API om pågående anställningar med en anställningstid på ≤6 månader.
 
-## Om projektet
+## Funktioner
 
-Verktyget hämtar data från SCB:s officiella API för tabellen "Pågående anställningar - anställningstid ≤6 månader". Datan presenteras i en tydlig tabell uppdelad per sektor och kön.
-
-### Vad visar analysen?
-
-- Antal korta anställningar per sektor (Näringslivet, Staten, Region, Kommun, Hushållens organisationer)
+- Visa statistik per sektor (Näringslivet, Staten, Region, Kommun m.fl.)
 - Fördelning mellan män och kvinnor
-- Totala antalet korta anställningar för vald månad
-
-## Krav
-
-### För Docker-alternativet:
-- Docker Desktop (Windows/Mac) eller Docker Engine (Linux)
-
-### För Python-alternativet:
-- Python 3.6 eller senare
-- Internetuppkoppling för att hämta data från SCB
+- Välj månad via dropdown-meny
+- Docker-container för enkel körning
 
 ## Installation och användning
 
 ### Alternativ 1: Köra med Docker (rekommenderas)
 
-1. **Klona eller ladda ner projektet**
-   ```bash
-   git clone https://github.com/ditt-anvandarnamn/scb-analys.git
-   cd scb-analys
-
+```bash
 # Bygg Docker-imagen
 docker build -t scb-analys .
 
+
 # Kör containern
-För att köra med senaste tillgängliga data (mars 2026):
-
-docker run scb-analys
-
-# För att specificera en annan månad:
-    docker run scb-analys python scb_analys_final.py 2024M02
+docker run -p 5000:5000 scb-analys
 
 
-# Alternativ 2: Köra direkt med Python
-1. Installera beroenden
-pip install pandas requests
+ALTERNATIV 2: Köra direkt med Python
 
-2. Kör skriptet
-python scb_analys_final.py
+# Installera beroenden
+pip install flask pandas requests
 
-3. Med specifik månad:
-python scb_analys_final.py 2024M02
+# Kör appen
+python app.py
 
 
+TEKNOLOGIER
 
-# Användningsexempel
-Exempel 1: Visa data för mars 2026
-docker run scb-analys
+Flask - Webbramverk
 
-=== HÄMTAR DATA FÖR Mar 2026 ===
+Pandas - Datahantering
 
-DATA FRAN SCB (Mar 2026):
-------------------------------------------------------------
-Sektor                                   Män   Kvinnor    Totalt
-------------------------------------------------------------
-Samtliga sektorer                    517,091   533,771  1,050,863
-Näringslivet                         409,950   331,562    741,512
-Staten                                22,754    25,660     48,414
-Region                                10,217    30,068     40,285
-Kommun                                51,138   118,255    169,393
-Hushållens organisationer             23,031    28,223     51,254
-------------------------------------------------------------
+Docker - Containerisering
 
-TOTAL: 1,050,863 korta anställningar i Mar 2026
+SCB:s API - Datakälla

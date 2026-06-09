@@ -2,11 +2,27 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Installera nödvändiga bibliotek
-RUN pip install pandas requests
+# Installera systemberoenden
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
-# Kopiera skriptet till containern
-COPY scb_analys_final.py .
+# Kopiera requirements.txt först
+COPY requirements.txt .
 
-# Kör skriptet när containern startar
-CMD ["python", "scb_analys_final.py"]
+# Uppgradera pip och installera numpy först (viktigt!)
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir numpy==1.24.3
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Kopiera applikationen
+COPY app.py .
+
+EXPOSE 5000
+
+ENV FLASK_APP=app.py
+ENV FLASK_ENV=production
+
+# Använd flask's inbyggda server istället för gunicorn (för att testa)
+CMD ["python", "app.py"]
