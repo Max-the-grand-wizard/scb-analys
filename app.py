@@ -137,8 +137,12 @@ def hamta_scb_data(manad_kod):
     except Exception as e:
         return None, f"Fel vid anslutning till SCB: {str(e)}"
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST', 'HEAD'])
 def index():
+    # Hantera HEAD-förfrågningar (används av Render för health checks)
+    if request.method == 'HEAD':
+        return '', 200
+    
     tillgangliga_manader = generera_tillgangliga_manader()
     vald_manad = '2026M03'
     
@@ -159,7 +163,6 @@ def index():
 
 @app.route('/debug')
 def debug():
-    """Felsökningsrutt för att se filstrukturen"""
     import os
     info = {
         'current_directory': os.getcwd(),
@@ -170,6 +173,10 @@ def debug():
         'template_folder': app.template_folder
     }
     return info
+
+@app.route('/test')
+def test():
+    return "Hello World! Appen fungerar!"
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
