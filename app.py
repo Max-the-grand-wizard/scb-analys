@@ -3,7 +3,7 @@ SCB ANALYS - Webbsida med Flask
 Analyserar data hamtad fran SCB:s API for pagaende anstallningar med anstallningstid ≤6 manader
 """
 
-from flask import Flask, render_template_string, request
+from flask import Flask, render_template, request
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
@@ -36,7 +36,7 @@ def konvertera_manad(manad_kod):
 def generera_tillgangliga_manader():
     """
     Genererar en lista med tillgängliga månader i formatet YYYY-MM
-    för dropdown-menyn
+    for dropdown-menyn
     """
     manader = []
     idag = datetime.now()
@@ -176,198 +176,6 @@ def hamta_scb_data(manad_kod):
     except Exception as e:
         return None, f"Fel vid anslutning till SCB: {str(e)}"
 
-# HTML-mall för webbsidan
-HTML_TEMPLATE = '''
-<!DOCTYPE html>
-<html>
-<head>
-    <title>SCB Analys - Korta anställningar</title>
-    <meta charset="utf-8">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        h1 {
-            color: #2c3e50;
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 10px;
-        }
-        .container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-top: 20px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        select {
-            padding: 8px;
-            width: 250px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        select:hover {
-            border-color: #3498db;
-        }
-        button {
-            background-color: #3498db;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-left: 10px;
-        }
-        button:hover {
-            background-color: #2980b9;
-        }
-        .form-row {
-            display: flex;
-            align-items: flex-end;
-            gap: 10px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: right;
-        }
-        th {
-            background-color: #3498db;
-            color: white;
-            text-align: center;
-        }
-        td:first-child, th:first-child {
-            text-align: left;
-        }
-        .error {
-            background-color: #e74c3c;
-            color: white;
-            padding: 10px;
-            border-radius: 4px;
-            margin-top: 20px;
-        }
-        .success {
-            background-color: #2ecc71;
-            color: white;
-            padding: 10px;
-            border-radius: 4px;
-            margin-top: 20px;
-        }
-        .total {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #ecf0f1;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 18px;
-        }
-        .info {
-            margin-top: 10px;
-            color: #7f8c8d;
-            font-size: 12px;
-        }
-        .loading {
-            display: none;
-            margin-left: 10px;
-            color: #3498db;
-        }
-    </style>
-    <script>
-        function showLoading() {
-            document.getElementById('loading').style.display = 'inline';
-            document.getElementById('submitBtn').disabled = true;
-        }
-    </script>
-</head>
-<body>
-    <h1> SCB Analys - Korta anställningar (≤6 månader)</h1>
-    
-    <div class="container">
-        <form method="POST" onsubmit="showLoading()">
-            <div class="form-group">
-                <label for="manad">Välj månad:</label>
-                <div class="form-row">
-                    <select id="manad" name="manad">
-                        {% for manad in tillgangliga_manader %}
-                        <option value="{{ manad.kod }}" {% if vald_manad == manad.kod %}selected{% endif %}>
-                            {{ manad.namn }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit" id="submitBtn">Hämta data</button>
-                    <span id="loading" class="loading">⏳ Laddar...</span>
-                </div>
-                <div class="info"> Välj en månad från listan för att visa statistik</div>
-            </div>
-        </form>
-        
-        {% if error %}
-        <div class="error">
-             {{ error }}
-        </div>
-        {% endif %}
-        
-        {% if data %}
-        <div class="success">
-             Data för {{ data.manad_lasbar }}
-        </div>
-        
-        <table>
-            <thead>
-                <tr>
-                    <th>Sektor</th>
-                    <th>Män</th>
-                    <th>Kvinnor</th>
-                    <th>Totalt</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for rad in data.tabell_data %}
-                <tr>
-                    <td>{{ rad.sektor }}</td>
-                    {% if rad.visa_na %}
-                    <td colspan="3" style="text-align: center;">N/A</td>
-                    {% else %}
-                    <td>{{ "{:,.0f}".format(rad.man) }}</td>
-                    <td>{{ "{:,.0f}".format(rad.kvinna) }}</td>
-                    <td>{{ "{:,.0f}".format(rad.total) }}</td>
-                    {% endif %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
-        {% if data.total_alla > 0 %}
-        <div class="total">
-             TOTAL: {{ "{:,.0f}".format(data.total_alla) }} korta anställningar i {{ data.manad_lasbar }}
-        </div>
-        {% endif %}
-        {% endif %}
-    </div>
-</body>
-</html>
-'''
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     # Generera lista med tillgängliga månader
@@ -379,19 +187,20 @@ def index():
     if request.method == 'POST':
         vald_manad = request.form.get('manad', '2026M03')
         data, error = hamta_scb_data(vald_manad)
-        return render_template_string(HTML_TEMPLATE, 
-                                     data=data, 
-                                     error=error,
-                                     tillgangliga_manader=tillgangliga_manader,
-                                     vald_manad=vald_manad)
+        return render_template('index.html', 
+                             data=data, 
+                             error=error,
+                             tillgangliga_manader=tillgangliga_manader,
+                             vald_manad=vald_manad)
     
     # GET request - visa utan data
-    return render_template_string(HTML_TEMPLATE, 
-                                 data=None, 
-                                 error=None,
-                                 tillgangliga_manader=tillgangliga_manader,
-                                 vald_manad=vald_manad)
+    return render_template('index.html', 
+                         data=None, 
+                         error=None,
+                         tillgangliga_manader=tillgangliga_manader,
+                         vald_manad=vald_manad)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
-   
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
