@@ -9,7 +9,11 @@ import pandas as pd
 from datetime import datetime, timedelta
 import os
 
-app = Flask(__name__)
+# Skapa app med absolut sökväg till templates
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
+
+app = Flask(__name__, template_folder=TEMPLATE_DIR)
 
 # Funktion for att konvertera M-format till lasbart format
 def konvertera_manad(manad_kod):
@@ -139,7 +143,6 @@ def hamta_scb_data(manad_kod):
 
 @app.route('/', methods=['GET', 'POST', 'HEAD'])
 def index():
-    # Hantera HEAD-förfrågningar (används av Render för health checks)
     if request.method == 'HEAD':
         return '', 200
     
@@ -170,7 +173,8 @@ def debug():
         'templates_exists': os.path.exists('templates'),
         'templates_files': os.listdir('templates') if os.path.exists('templates') else 'Finns inte',
         'app_root': app.root_path,
-        'template_folder': app.template_folder
+        'template_folder': app.template_folder,
+        'template_dir_exists': os.path.exists(app.template_folder)
     }
     return info
 
