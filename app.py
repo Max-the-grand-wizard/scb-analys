@@ -176,13 +176,14 @@ def hamta_scb_data(manad_kod):
     except Exception as e:
         return None, f"Fel vid anslutning till SCB: {str(e)}"
 
-# HTML-mall för webbsidan
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
-<html>
+<html lang="sv">
 <head>
-    <title>SCB Analys - Korta anställningar</title>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Analys av korta anstallningar (≤6 manader) fran SCB. Valj manad for att se statistik fordelat pa sektor, kon och totala antalet anstallningar.">
+    <title>SCB Analys - Korta anstallningar</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -190,14 +191,16 @@ HTML_TEMPLATE = '''
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
+            color: #1a1a1a;
+            line-height: 1.6;
         }
         h1 {
-            color: #2c3e50;
-            border-bottom: 3px solid #3498db;
+            color: #1a2a3a;
+            border-bottom: 3px solid #1a6b8a;
             padding-bottom: 10px;
         }
         .container {
-            background-color: white;
+            background-color: #ffffff;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -210,36 +213,52 @@ HTML_TEMPLATE = '''
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
-            color: #2c3e50;
+            color: #1a1a1a;
         }
         select {
             padding: 8px;
             width: 250px;
-            border: 1px solid #ddd;
+            border: 1px solid #666666;
             border-radius: 4px;
             font-size: 14px;
             cursor: pointer;
+            background-color: #ffffff;
+            color: #1a1a1a;
         }
         select:hover {
-            border-color: #3498db;
+            border-color: #1a6b8a;
+        }
+        select:focus {
+            outline: 2px solid #1a6b8a;
+            outline-offset: 2px;
         }
         button {
-            background-color: #3498db;
-            color: white;
+            background-color: #1a6b8a;
+            color: #ffffff;
             padding: 10px 20px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
+            font-weight: bold;
             margin-left: 10px;
         }
         button:hover {
-            background-color: #2980b9;
+            background-color: #0d4a63;
+        }
+        button:focus {
+            outline: 3px solid #0d4a63;
+            outline-offset: 2px;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
         .form-row {
             display: flex;
             align-items: flex-end;
             gap: 10px;
+            flex-wrap: wrap;
         }
         table {
             width: 100%;
@@ -247,49 +266,64 @@ HTML_TEMPLATE = '''
             margin-top: 20px;
         }
         th, td {
-            border: 1px solid #ddd;
+            border: 1px solid #999999;
             padding: 12px;
             text-align: right;
         }
         th {
-            background-color: #3498db;
-            color: white;
+            background-color: #1a6b8a;
+            color: #ffffff;
             text-align: center;
+            font-weight: bold;
         }
         td:first-child, th:first-child {
             text-align: left;
         }
         .error {
-            background-color: #e74c3c;
-            color: white;
+            background-color: #8b1a1a;
+            color: #ffffff;
             padding: 10px;
             border-radius: 4px;
             margin-top: 20px;
+            border-left: 4px solid #ff4444;
         }
         .success {
-            background-color: #2ecc71;
-            color: white;
+            background-color: #1a6b3a;
+            color: #ffffff;
             padding: 10px;
             border-radius: 4px;
             margin-top: 20px;
+            border-left: 4px solid #44ff88;
         }
         .total {
             margin-top: 20px;
             padding: 15px;
-            background-color: #ecf0f1;
+            background-color: #e8eaed;
             border-radius: 4px;
             font-weight: bold;
             font-size: 18px;
+            color: #1a1a1a;
+            border-left: 4px solid #1a6b8a;
         }
         .info {
             margin-top: 10px;
-            color: #7f8c8d;
+            color: #333333;
             font-size: 12px;
         }
         .loading {
             display: none;
             margin-left: 10px;
-            color: #3498db;
+            color: #1a6b8a;
+            font-weight: bold;
+        }
+        main {
+            outline: none;
+        }
+        a:focus, 
+        button:focus,
+        select:focus {
+            outline: 3px solid #1a6b8a;
+            outline-offset: 2px;
         }
     </style>
     <script>
@@ -300,70 +334,81 @@ HTML_TEMPLATE = '''
     </script>
 </head>
 <body>
-    <h1> SCB Analys - Korta anställningar (≤6 månader)</h1>
+    <header role="banner" aria-label="Sidhuvud">
+        <h1>SCB Analys - Korta anstallningar (≤6 manader)</h1>
+    </header>
     
-    <div class="container">
-        <form method="POST" onsubmit="showLoading()">
-            <div class="form-group">
-                <label for="manad">Välj månad:</label>
-                <div class="form-row">
-                    <select id="manad" name="manad">
-                        {% for manad in tillgangliga_manader %}
-                        <option value="{{ manad.kod }}" {% if vald_manad == manad.kod %}selected{% endif %}>
-                            {{ manad.namn }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit" id="submitBtn">Hämta data</button>
-                    <span id="loading" class="loading">⏳ Laddar...</span>
+    <main role="main" id="main-content" aria-label="Huvudinnehall">
+        <div class="container">
+            <form method="POST" onsubmit="showLoading()" aria-label="Valj manad">
+                <div class="form-group">
+                    <label for="manad">Valj manad:</label>
+                    <div class="form-row">
+                        <select id="manad" name="manad" aria-required="true">
+                            {% for manad in tillgangliga_manader %}
+                            <option value="{{ manad.kod }}" {% if vald_manad == manad.kod %}selected{% endif %}>
+                                {{ manad.namn }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" id="submitBtn">Hamta data</button>
+                        <span id="loading" class="loading">Laddar...</span>
+                    </div>
+                    <div class="info">Valj en manad fran listan for att visa statistik over korta anstallningar</div>
                 </div>
-                <div class="info"> Välj en månad från listan för att visa statistik</div>
+            </form>
+            
+            {% if error %}
+            <div class="error" role="alert">
+                {{ error }}
             </div>
-        </form>
-        
-        {% if error %}
-        <div class="error">
-             {{ error }}
+            {% endif %}
+            
+            {% if data %}
+            <div class="success" role="status">
+                Data for {{ data.manad_lasbar }}
+            </div>
+            
+            <table aria-label="Statistik over korta anstallningar per sektor">
+                <thead>
+                    <tr>
+                        <th scope="col">Sektor</th>
+                        <th scope="col">Man</th>
+                        <th scope="col">Kvinnor</th>
+                        <th scope="col">Totalt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rad in data.tabell_data %}
+                    <tr>
+                        <th scope="row">{{ rad.sektor }}</th>
+                        {% if rad.visa_na %}
+                        <td colspan="3" style="text-align: center; color: #333333;">N/A</td>
+                        {% else %}
+                        <td>{{ "{:,.0f}".format(rad.man) }}</td>
+                        <td>{{ "{:,.0f}".format(rad.kvinna) }}</td>
+                        <td><strong>{{ "{:,.0f}".format(rad.total) }}</strong></td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            {% if data.total_alla > 0 %}
+            <div class="total" role="status">
+                TOTAL: {{ "{:,.0f}".format(data.total_alla) }} korta anstallningar i {{ data.manad_lasbar }}
+            </div>
+            {% endif %}
+            {% endif %}
         </div>
-        {% endif %}
-        
-        {% if data %}
-        <div class="success">
-             Data för {{ data.manad_lasbar }}
-        </div>
-        
-        <table>
-            <thead>
-                <tr>
-                    <th>Sektor</th>
-                    <th>Män</th>
-                    <th>Kvinnor</th>
-                    <th>Totalt</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for rad in data.tabell_data %}
-                <tr>
-                    <td>{{ rad.sektor }}</td>
-                    {% if rad.visa_na %}
-                    <td colspan="3" style="text-align: center;">N/A</td>
-                    {% else %}
-                    <td>{{ "{:,.0f}".format(rad.man) }}</td>
-                    <td>{{ "{:,.0f}".format(rad.kvinna) }}</td>
-                    <td>{{ "{:,.0f}".format(rad.total) }}</td>
-                    {% endif %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
-        {% if data.total_alla > 0 %}
-        <div class="total">
-             TOTAL: {{ "{:,.0f}".format(data.total_alla) }} korta anställningar i {{ data.manad_lasbar }}
-        </div>
-        {% endif %}
-        {% endif %}
-    </div>
+    </main>
+    
+    <footer role="contentinfo" aria-label="Sidfot">
+        <p style="margin-top: 20px; font-size: 14px; color: #333333; text-align: center;">
+            Kalla: SCB<br>
+            Data uppdateras lopande • Kontakta oss for fragor
+        </p>
+    </footer>
 </body>
 </html>
 '''
@@ -393,5 +438,7 @@ def index():
                                  vald_manad=vald_manad)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)  # ← debug=False i produktion
    
