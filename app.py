@@ -7,6 +7,7 @@ from flask import Flask, render_template, request
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
+import os
 
 app = Flask(__name__)
 
@@ -176,31 +177,33 @@ def hamta_scb_data(manad_kod):
     except Exception as e:
         return None, f"Fel vid anslutning till SCB: {str(e)}"
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def index():
-    # Generera lista med tillgängliga månader
     tillgangliga_manader = generera_tillgangliga_manader()
-    
-    # Standardvärde för vald månad
     vald_manad = '2026M03'
     
-    if request.method == 'POST':
-        vald_manad = request.form.get('manad', '2026M03')
-        data, error = hamta_scb_data(vald_manad)
-        return render_template('index.html', 
-                             data=data, 
-                             error=error,
-                             tillgangliga_manader=tillgangliga_manader,
-                             vald_manad=vald_manad)
+    # Kontrollera att template finns
+    template_path = os.path.join(app.root_path, 'templates', 'index.html')
+    if not os.path.exists(template_path):
+        return f"Template-filen saknas: {template_path}", 500
     
-    # GET request - visa utan data
     return render_template('index.html', 
                          data=None, 
                          error=None,
                          tillgangliga_manader=tillgangliga_manader,
                          vald_manad=vald_manad)
 
+@app.route('/debug')
+def debug():
+    debug_info = {
+        'root_path': app.root_path,
+        'templates_path': os.path.join(app.root_path, 'templates'),
+        'templates_exists': os.path.exists(os.path.join(app.root_path, 'templates')),
+        'index_exists': os.path.exists(os.path.join(app.root_path, 'templates', 'index.html')),
+        'files_in_templates': os.listdir(os.path.join(app.root_path, 'templates')) if os.path.exists(os.path.join(app.root_path, 'templates')) else []
+    }
+    return debug_info
+
 if __name__ == '__main__':
-    import os
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
