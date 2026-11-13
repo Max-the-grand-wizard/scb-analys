@@ -364,7 +364,7 @@ HTML_TEMPLATE = '''
 @app.route('/', methods=['GET', 'POST'])
 def index():
     # Generera lista med tillgängliga månader
-    tillgangliga_manader = generera_tillgangliga_manader()
+    tillgangliga_manader = hamta_giltiga_manader()
     
     # Standardvärde för vald månad
     vald_manad = '2026M03'
