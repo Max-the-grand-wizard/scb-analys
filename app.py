@@ -32,38 +32,31 @@ def konvertera_manad(manad_kod):
     except:
         return manad_kod
 
-# Funktion som genererar tillgängliga månader (senaste 24 månaderna)
-def generera_tillgangliga_manader():
+# Funktion som hämtar alla giltiga månadskoder från SCB:s metadata
+def hamta_giltiga_manader():
     """
-    Genererar en lista med tillgängliga månader i formatet YYYY-MM
-    för dropdown-menyn
+    Hämtar alla giltiga månadskoder för Tid från SCB:s metadata
+    och returnerar en lista med dicts {'kod': ..., 'namn': ...},
+    nyaste månaden först.
     """
-    manader = []
-    idag = datetime.now()
-    
-    # Gå tillbaka 24 månader
-    for i in range(48):
-        datum = idag - timedelta(days=30*i)
-        ar = datum.year
-        manad = datum.month
-        # Konvertera till SCB-format: YYYYMmm (t.ex. 2026M03)
-        manad_kod = f"{ar}M{manad:02d}"
-        manad_namn = konvertera_manad(manad_kod)
-        manader.append({
-            'kod': manad_kod,
-            'namn': manad_namn
-        })
-    
-    # Ta bort eventuella dubbletter och sortera
-    unika_manader = []
-    sedda_koder = set()
-    for m in manader:
-        if m['kod'] not in sedda_koder:
-            sedda_koder.add(m['kod'])
-            unika_manader.append(m)
-    
-    # Sortera så att nyaste månaden visas först
-    return sorted(unika_manader, key=lambda x: x['kod'], reverse=True)
+    url = "https://api.scb.se/OV0104/v1/doris/sv/ssd/START/AM/AM0211/AM0211A/PagaendeAnstAnstTid"
+    try:
+        r = requests.get(url, timeout=10)
+        r.raise_for_status()
+        meta = r.json()
+        for var in meta.get("variables", []):
+            if var["code"] == "Tid":
+                giltiga = var["values"]
+                resultat = []
+                for kod in giltiga:
+                    resultat.append({
+                        'kod': kod,
+                        'namn': konvertera_manad(kod)
+                    })
+                return sorted(resultat, key=lambda x: x['kod'], reverse=True)
+    except Exception as e:
+        print(f"Kunde inte hämta giltiga månader: {e}")
+    return []
 
 # Funktion som hamtar och bearbetar data
 def hamta_scb_data(manad_kod):
